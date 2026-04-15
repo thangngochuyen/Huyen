@@ -1,47 +1,77 @@
 // Usage: open the TrangDen lesson page in a browser, open DevTools console, and paste this script.
-(function() {
+(async function() {
   const answer21 = 'Yêu cầu bài số 1 là ra lệnh cho coding agent tạo một trang web profile card đẹp bằng HTML, CSS, hiển thị thông tin cá nhân và verification code.';
   const answer22 = 'Agent đã sử dụng các công nghệ sau để hoàn thành nhiệm vụ:\n1. HTML và CSS để tạo giao diện thẻ profile (profile card).\n2. Một công cụ tự động chụp màn hình để render và chụp lại trang web.\n3. Curl để upload ảnh screenshot lên endpoint.\n4. GitHub để quản lý mã nguồn và commit.';
 
-  // Log all possible input elements
-  const allInputs = Array.from(document.querySelectorAll('input, textarea, [contenteditable], div[role="textbox"], span[contenteditable], p[contenteditable]'));
-  console.log('Tất cả elements có thể nhập:', allInputs.map(el => ({tag: el.tagName, id: el.id, class: el.className, contenteditable: el.contentEditable, role: el.getAttribute('role'), visible: !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length)})));
+  const url = window.location.pathname;
+  const candidates = new Set();
+  const matchBai = url.match(/bai\/(\d+)/i);
+  if (matchBai) candidates.add(Number(matchBai[1]));
+  const matchQuest = url.match(/quest\/(\d+)/i);
+  if (matchQuest) candidates.add(Number(matchQuest[1]));
+  const text = document.body.innerText;
+  const textQuest = text.match(/quest_id\D*(\d+)/i) || text.match(/quest\s*id\D*(\d+)/i);
+  if (textQuest) candidates.add(Number(textQuest[1]));
+  [1,2,3,4,5].forEach(n => candidates.add(n));
 
-  const fields = allInputs.filter(el => el.offsetParent !== null || el.isContentEditable || el.getAttribute('role') === 'textbox');
+  const candidateQuestIds = Array.from(candidates).filter(n => !isNaN(n) && n > 0).slice(0, 6);
+  console.log('Đã thu thập candidate quest_id:', candidateQuestIds);
 
-  if (fields.length === 0) {
-    console.warn('Không tìm thấy trường nhập. Hãy click vào câu hỏi cần điền trước, rồi chạy lại script.');
-    return;
+  const tokenKeys = Object.keys(localStorage).filter(k => /token|auth|jwt|bearer|access/i.test(k));
+  const tokens = tokenKeys.map(k => ({key:k, value: localStorage.getItem(k)}));
+  console.log('Các key token khả dĩ trong localStorage:', tokens);
+
+  const possibleToken = tokens.find(t => t.value && t.value.length > 10);
+  const authHeader = possibleToken ? 'Bearer ' + possibleToken.value : null;
+  if (!possibleToken) {
+    console.warn('Không tìm thấy token rõ ràng trong localStorage; request sẽ thử dùng cookie nếu có.');
   }
 
-  const values = [answer21, answer22];
-  let filled = 0;
+  const answerString = answer21 + '\n\n' + answer22;
+  const payloads = [
+    {quest_id: null, answer: answerString},
+    {quest_id: null, answer: {field_0: answer21, field_1: answer22}},
+    {quest_id: null, answer: {answer_text: answerString}},
+    {quest_id: null, answer: [answer21, answer22]}
+  ];
 
-  for (let i = 0; i < Math.min(fields.length, values.length); i++) {
-    const el = fields[i];
-    const text = values[i];
-
-    try {
-      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-        el.value = text;
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-      } else if (el.isContentEditable || el.getAttribute('contenteditable') === 'true') {
-        el.focus();
-        el.innerText = text;
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-        el.dispatchEvent(new Event('blur', { bubbles: true }));
-      } else if (el.getAttribute('role') === 'textbox') {
-        el.focus();
-        el.innerText = text;
-        el.dispatchEvent(new Event('input', { bubbles: true }));
+  async function trySubmit(questId) {
+    const baseUrl = '/agentsee/api/quest-answer';
+    for (let i = 0; i < payloads.length; i++) {
+      const payload = JSON.parse(JSON.stringify(payloads[i]));
+      payload.quest_id = questId;
+      const url = baseUrl;
+      const headers = { 'Content-Type': 'application/json' };
+      if (authHeader) headers.Authorization = authHeader;
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+          credentials: 'include'
+        });
+        const body = await res.text();
+        console.log('POST', url, 'payload', payload, 'status', res.status, 'response', body);
+        if (res.ok) {
+          console.log('Submit thành công với quest_id', questId, 'payload', payload);
+          return true;
+        }
+      } catch (e) {
+        console.error('Lỗi gửi request với quest_id', questId, 'payload', payload, e);
       }
-      filled++;
-      console.log(`Điền vào ${el.tagName}#${el.id || 'no-id'}: ${text.slice(0, 50)}...`);
-    } catch (e) {
-      console.error(`Lỗi khi điền vào ${el.tagName}:`, e);
+    }
+    return false;
+  }
+
+  let success = false;
+  for (const q of candidateQuestIds) {
+    if (await trySubmit(q)) {
+      success = true;
+      break;
     }
   }
 
-  console.log(`Đã điền ${filled} trường. Nếu trang có thêm câu hỏi, hãy click vào ô tiếp theo và chạy lại script.`);
+  if (!success) {
+    console.warn('Không submit được. Hãy kiểm tra token trong localStorage và quest_id chính xác, rồi thử lại.');
+  }
 })();

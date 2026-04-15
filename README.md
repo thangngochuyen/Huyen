@@ -12,3 +12,5 @@ If TrangDen does not expose a visible answer submission form, use the browser co
 4. Press Enter to execute and fill the available input fields.
 
 If the site uses hidden or contenteditable fields, click the question area first and run the script again.
+
+If there still is no visible form, use the same console script to try direct submission via the internal API endpoint `/agentsee/api/quest-answer`. The script will attempt candidate `quest_id` values and use cookies or a token from localStorage if available.
