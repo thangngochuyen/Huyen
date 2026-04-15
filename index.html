@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Card - Huyen Thang</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .profile-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 30px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            border: 5px solid #667eea;
+        }
+        .name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .info {
+            margin-bottom: 15px;
+        }
+        .label {
+            font-weight: bold;
+            color: #667eea;
+        }
+        .value {
+            color: #555;
+        }
+        .verification {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-card">
+        <img src="https://lh3.googleusercontent.com/a/ACg8ocJLGCzeKxlZmL3zVNZcrRd3LPEN1oWWxec8xZDT2KNLZKOr5w=s96-c" alt="Avatar" class="avatar">
+        <div class="name">Huyen Thang</div>
+        <div class="info">
+            <div class="label">Email:</div>
+            <div class="value">huyen.thang@koto.com.au</div>
+        </div>
+        <div class="info">
+            <div class="label">Phone:</div>
+            <div class="value">0348484182</div>
+        </div>
+        <div class="info">
+            <div class="label">Birthday:</div>
+            <div class="value">2001-04-16</div>
+        </div>
+        <div class="info">
+            <div class="label">Facebook:</div>
+            <div class="value">N/A</div>
+        </div>
+        <div class="verification">
+            Verification Code: 54E163A2
+        </div>
+    </div>
+</body>
+</html>
