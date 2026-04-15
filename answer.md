@@ -1,3 +1,5 @@
+Yêu cầu của bài 1: Tạo trang web profile card
+
 Agent đã sử dụng các công nghệ sau để hoàn thành nhiệm vụ:
 
 1. HTML và CSS để tạo giao diện thẻ profile (profile card).
