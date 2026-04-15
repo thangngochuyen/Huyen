@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="/agentsee/lop-hoc/">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="TrangDen - Nền tảng học tập trực tuyến">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="TrangDen">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <title>TrangDen</title>
+  <!-- google_fonts (Flutter web) fetch fonts.gstatic.com với header khiến CORS preflight bị từ chối → app crash trước login. -->
+  <script>
+  (function () {
+    if (typeof window.fetch !== 'function') return;
+    var orig = window.fetch;
+    window.fetch = function (input, init) {
+      var url = typeof input === 'string' ? input : (input && input.url) || '';
+      if (url.indexOf('fonts.gstatic.com') === -1) {
+        return orig.apply(this, arguments);
+      }
+      if (input instanceof Request && init === undefined) {
+        var h = new Headers(input.headers);
+        h.delete('cache-control');
+        h.delete('pragma');
+        input = new Request(input.url, {
+          method: input.method, headers: h, mode: input.mode, credentials: input.credentials,
+          cache: 'default', redirect: input.redirect, referrer: input.referrer,
+          referrerPolicy: input.referrerPolicy, integrity: input.integrity,
+          keepalive: input.keepalive, signal: input.signal
+        });
+        return orig.call(this, input);
+      }
+      init = init ? Object.assign({}, init) : {};
+      init.cache = 'default';
+      if (init.headers instanceof Headers) {
+        var h2 = new Headers(init.headers);
+        h2.delete('cache-control');
+        h2.delete('pragma');
+        init.headers = h2;
+      } else if (init.headers && typeof init.headers === 'object') {
+        var o = Object.assign({}, init.headers);
+        delete o['cache-control'];
+        delete o['Cache-Control'];
+        delete o['pragma'];
+        delete o['Pragma'];
+        init.headers = o;
+      }
+      return orig.call(this, input, init);
+    };
+  })();
+  </script>
+  <!-- Be Vietnam Pro qua CSS (trình duyệt tải) — khớp với GoogleFonts + allowRuntimeFetching=false trong main.dart -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; min-height: 100vh; }
+
+    /* === APP SHELL: Giao diện thật render bằng HTML === */
+    #app-shell { min-height: 100vh; filter: blur(0); }
+
+    /* AppBar */
+    .shell-appbar { background: #667eea; color: #fff; height: 56px; display: flex; align-items: center; padding: 0 16px; box-shadow: 0 2px 4px rgba(0,0,0,.15); position: sticky; top: 0; z-index: 10; }
+    .shell-appbar h1 { font-size: 20px; font-weight: 600; flex: 1; }
+
+    /* Content */
+    .shell-content { padding: 20px 16px; max-width: 800px; margin: 0 auto; }
+    .shell-welcome { background: #fff; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .shell-welcome .avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #667eea33, #764ba233); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+    .shell-welcome .avatar svg { width: 28px; height: 28px; fill: #667eea; }
+    .shell-welcome h2 { font-size: 22px; color: #333; margin-bottom: 4px; }
+    .shell-welcome p { color: #888; font-size: 14px; }
+    .shell-section-title { font-size: 16px; font-weight: 600; color: #333; margin: 24px 0 12px; display: flex; align-items: center; gap: 8px; }
+    .shell-section-title svg { width: 20px; height: 20px; fill: #667eea; }
+    .shell-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .shell-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .shell-card .thumb { height: 120px; background: linear-gradient(135deg, #667eea22, #764ba222); position: relative; }
+    .shell-card .thumb .skeleton { position: absolute; inset: 0; background: linear-gradient(90deg, transparent 25%, rgba(102,126,234,.08) 50%, transparent 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+    .shell-card .info { padding: 12px; }
+    .shell-card .info .skel-line { height: 14px; border-radius: 7px; background: #eee; margin-bottom: 8px; }
+    .shell-card .info .skel-line:last-child { width: 60%; margin-bottom: 0; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .shell-bottomnav { position: fixed; bottom: 0; left: 0; right: 0; height: 64px; background: #fff; border-top: 1px solid #eee; display: flex; align-items: center; justify-content: space-around; z-index: 10; }
+    .shell-bottomnav .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; color: #999; font-size: 11px; }
+    .shell-bottomnav .nav-item.active { color: #667eea; }
+    .shell-bottomnav .nav-item svg { width: 24px; height: 24px; }
+
+    /* Login shell */
+    .shell-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0a0a1a url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=1200&q=80') center/cover no-repeat; padding: 32px; position: relative; }
+    .shell-login::before { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.55); }
+    .shell-login .card { background: #fff; border-radius: 20px; padding: 32px 24px; width: 100%; max-width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,.15); position: relative; z-index: 1; }
+    .shell-login .header { text-align: center; margin-bottom: 32px; color: #fff; position: relative; z-index: 1; }
+    .shell-login .header .logo { width: 80px; height: 80px; background: #fff; border-radius: 20px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(0,0,0,.4); }
+    .shell-login .header .logo svg { width: 44px; height: 44px; fill: #1a1a2e; }
+    .shell-login .header h1 { font-size: 28px; margin: 0 0 4px; }
+    .shell-login .header p { opacity: .8; font-size: 15px; margin: 0; }
+    .shell-login input { width: 100%; padding: 12px 16px; border: 1px solid #ddd; border-radius: 12px; font-size: 15px; margin-bottom: 12px; outline: none; }
+    .shell-login .btn-primary { width: 100%; padding: 14px; background: #1a1a2e; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; }
+    .shell-login .divider { display: flex; align-items: center; gap: 16px; margin: 20px 0; color: #aaa; font-size: 13px; }
+    .shell-login .divider::before, .shell-login .divider::after { content: ''; flex: 1; height: 1px; background: #ddd; }
+    .shell-login .btn-google { width: 100%; padding: 12px; background: #fff; border: 1px solid #ddd; border-radius: 12px; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+    /* === LỚP PHỦ LOADING === */
+    #loading-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,.45);
+      backdrop-filter: blur(2px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: #fff;
+      transition: opacity .4s ease;
+    }
+    #loading-overlay.fade-out { opacity: 0; pointer-events: none; }
+    #loading-overlay .loader-icon {
+      width: 64px; height: 64px; background: #fff; border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,.3);
+      margin-bottom: 20px;
+    }
+    #loading-overlay .loader-icon svg { width: 36px; height: 36px; fill: #1a1a2e; }
+    #loading-overlay .loader-text { font-size: 16px; font-weight: 500; margin-bottom: 20px; letter-spacing: .3px; }
+    #loading-overlay .progress-wrap {
+      width: 220px; height: 6px; background: rgba(255,255,255,.2); border-radius: 3px; overflow: hidden;
+    }
+    #loading-overlay .progress-bar {
+      height: 100%; width: 0%; background: #fff; border-radius: 3px;
+      transition: width .3s ease;
+    }
+    #loading-overlay .progress-pct {
+      margin-top: 8px; font-size: 13px; opacity: .7;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+  <!-- ?login_as= — Flutter lib/web_login_as_web.dart -->
+  <!-- APP SHELL: Giao diện quen thuộc phía sau -->
+  <div id="app-shell">
+    <script>
+      var cachedUser = null;
+      try { var raw = localStorage.getItem('flutter.cached_user'); if (raw) cachedUser = JSON.parse(raw); } catch(e) {}
+    </script>
+    <script>
+      if (cachedUser && cachedUser.user) {
+        var name = cachedUser.user.firstname || cachedUser.user.username || cachedUser.user.email || 'bạn';
+        document.getElementById('app-shell').innerHTML = `
+          <div class="shell-appbar"><h1>TrangDen</h1></div>
+          <div class="shell-content">
+            <div class="shell-welcome">
+              <div class="avatar"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+              <h2>Xin chào, ${name}!</h2>
+              <p>Nền tảng học tập trực tuyến</p>
+            </div>
+            <div class="shell-section-title"><svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/></svg>Khoá học của bạn</div>
+            <div class="shell-card-grid">
+              ${[1,2,3,4].map(()=>'<div class="shell-card"><div class="thumb"><div class="skeleton"></div></div><div class="info"><div class="skel-line"></div><div class="skel-line"></div></div></div>').join('')}
+            </div>
+          </div>
+          <div class="shell-bottomnav">
+            <div class="nav-item active"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Trang chủ</div>
+            <div class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/></svg>Khoá học</div>
+            <div class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>Chat AI</div>
+            <div class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Tài khoản</div>
+          </div>`;
+      } else {
+        document.getElementById('app-shell').innerHTML = `
+          <div class="shell-login"><div>
+            <div class="header">
+              <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg></div>
+              <h1>TrangDen</h1>
+              <p>Nền tảng học tập trực tuyến</p>
+            </div>
+            <div class="card">
+              <input type="email" placeholder="Email" disabled>
+              <input type="password" placeholder="Mã code" disabled>
+              <button class="btn-primary" disabled>Đăng nhập</button>
+              <div class="divider">hoặc</div>
+              <button class="btn-google" disabled>
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                Đăng nhập với Google
+              </button>
+            </div>
+          </div></div>`;
+      }
+    </script>
+  </div>
+
+  <!-- LỚP PHỦ LOADING -->
+  <div id="loading-overlay">
+    <div class="loader-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+    </div>
+    <div class="loader-text">Đang tải ứng dụng...</div>
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <div class="progress-pct" id="progress-pct">0%</div>
+  </div>
+
+
+  <script>
+    function clearAppCache() {
+      // Xoá localStorage
+      localStorage.clear();
+      // Xoá sessionStorage
+      sessionStorage.clear();
+      // Xoá service worker cache
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          for (var n of names) caches.delete(n);
+        });
+      }
+      // Unregister service workers
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          for (var r of regs) r.unregister();
+        });
+      }
+      // Reload bỏ cache
+      setTimeout(function() { location.reload(true); }, 300);
+    }
+  </script>
+  <!-- jsQR for QR code scanning -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- Force unregister old Service Workers ngay khi load -->
+  <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(regs) {
+      regs.forEach(function(r) { r.unregister(); });
+    });
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        names.forEach(function(n) { caches.delete(n); });
+      });
+    }
+  }
+  </script>
+  <!-- Flutter load ngầm -->
+  <script src="flutter_bootstrap.js?v=1776215542" async></script>
+  <script>
+    // Giả lập tiến trình dựa trên thời gian thực tế (~10s)
+    (function() {
+      var bar = document.getElementById('progress-bar');
+      var pct = document.getElementById('progress-pct');
+      var progress = 0;
+      var done = false;
+
+      // Tăng nhanh đầu, chậm dần cuối (easing, ước ~20s)
+      var timer = setInterval(function() {
+        if (done) return;
+        var remaining = 95 - progress;
+        var step = Math.max(0.15, remaining * 0.03);
+        progress = Math.min(95, progress + step);
+        bar.style.width = progress + '%';
+        pct.textContent = Math.round(progress) + '%';
+      }, 200);
+
+      function dismissOverlay() {
+        done = true;
+        clearInterval(timer);
+        if (bar) bar.style.width = '100%';
+        if (pct) pct.textContent = '100%';
+        setTimeout(function() {
+          var overlay = document.getElementById('loading-overlay');
+          var shell = document.getElementById('app-shell');
+          if (overlay) { overlay.classList.add('fade-out'); setTimeout(function() { overlay.remove(); }, 400); }
+          if (shell) { shell.remove(); }
+        }, 300);
+      }
+
+      window.addEventListener('flutter-first-frame', dismissOverlay);
+
+      // Thông báo đang tải lâu ở giây 30 (mạng chậm)
+      setTimeout(function() {
+        if (done) return;
+        var pctEl = document.getElementById('progress-pct');
+        if (pctEl) pctEl.textContent = 'Đang tải...';
+      }, 30000);
+
+      // Tránh xoay vô hạn nếu Flutter lỗi (font, JS, v.v.) — timeout 60s
+      setTimeout(function() {
+        if (done) return;
+        clearInterval(timer);
+        var overlay = document.getElementById('loading-overlay');
+        if (!overlay || overlay.classList.contains('fade-out')) return;
+        overlay.innerHTML = '<div style="max-width:360px;text-align:center;padding:24px;color:#fff;font-family:system-ui,sans-serif">' +
+          '<p style="font-size:16px;margin:0 0 12px">Không tải được ứng dụng (quá lâu hoặc lỗi script).</p>' +
+          '<p style="font-size:13px;opacity:.85;margin:0 0 16px">Thử xóa cache / Ctrl+Shift+R hoặc bấm nút dưới.</p>' +
+          '<button type="button" onclick="clearAppCache()" style="padding:12px 20px;border-radius:10px;border:0;background:#fff;color:#1a1a2e;font-weight:600;cursor:pointer">Xóa cache & tải lại</button></div>';
+      }, 60000);
+    })();
+  </script>
+</body>
+</html>
