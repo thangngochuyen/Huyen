@@ -1,0 +1,27 @@
+{
+  "name": "huyen",
+  "version": "1.0.0",
+  "description": "",
+  "main": "make_screenshot.js",
+  "dependencies": {
+    "detect-libc": "^2.1.2",
+    "puppeteer": "^24.40.0",
+    "semver": "^7.7.4",
+    "sharp": "^0.34.5"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thangngochuyen/Huyen.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/thangngochuyen/Huyen/issues"
+  },
+  "homepage": "https://github.com/thangngochuyen/Huyen#readme"
+}

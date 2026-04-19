@@ -17,22 +17,35 @@
   const candidateQuestIds = Array.from(candidates).filter(n => !isNaN(n) && n > 0).slice(0, 6);
   console.log('Đã thu thập candidate quest_id:', candidateQuestIds);
 
-  const tokenKeys = Object.keys(localStorage).filter(k => /token|auth|jwt|bearer|access/i.test(k));
-  const tokens = tokenKeys.map(k => ({key:k, value: localStorage.getItem(k)}));
-  console.log('Các key token khả dĩ trong localStorage:', tokens);
+  const getStorageTokens = () => {
+    const entries = [];
+    for (const [key, value] of Object.entries(localStorage)) {
+      entries.push({storage: 'localStorage', key, value});
+    }
+    for (const [key, value] of Object.entries(sessionStorage)) {
+      entries.push({storage: 'sessionStorage', key, value});
+    }
+    return entries.filter(e => /token|auth|jwt|bearer|access|session|user/i.test(e.key) && e.value && e.value.length > 10);
+  };
 
-  const possibleToken = tokens.find(t => t.value && t.value.length > 10);
+  const tokens = getStorageTokens();
+  console.log('Các key token khả dĩ trong storage:', tokens);
+  console.log('Cookies hiện tại:', document.cookie);
+
+  const possibleToken = tokens.length ? tokens[0] : null;
   const authHeader = possibleToken ? 'Bearer ' + possibleToken.value : null;
   if (!possibleToken) {
-    console.warn('Không tìm thấy token rõ ràng trong localStorage; request sẽ thử dùng cookie nếu có.');
+    console.warn('Không tìm thấy token rõ ràng trong localStorage/sessionStorage; request sẽ thử dùng cookie nếu có.');
+    console.warn('Nếu vẫn báo 401, bạn cần đăng nhập vào TrangDen trước khi chạy script.');
   }
 
-  const answerString = answer21 + '\n\n' + answer22;
+  const answerString = answer22;
   const payloads = [
     {quest_id: null, answer: answerString},
-    {quest_id: null, answer: {field_0: answer21, field_1: answer22}},
+    {quest_id: null, answer: {field_0: answer22}},
     {quest_id: null, answer: {answer_text: answerString}},
-    {quest_id: null, answer: [answer21, answer22]}
+    {quest_id: null, answer: [answer22]},
+    {quest_id: null, answer: {field_0: answer21, field_1: answer22}}
   ];
 
   async function trySubmit(questId) {
